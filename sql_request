@@ -1,1 +1,70 @@
-test
+
+/* Question 1 */
+
+SELECT nb_breakdowns, avg(nb_visits) AS avg_visits FROM (
+
+SELECT t1.id,
+
+       coalesce((SELECT count(*) 
+                 FROM breakdowns t2 
+                 WHERE t1.id = t2.elevator_id 
+                 GROUP BY elevator_id),0) AS nb_breakdowns,
+                 
+                (SELECT count(*) 
+                 FROM visits t3 
+                 WHERE t1.id = t3.elevator_id 
+                 GROUP BY elevator_id) AS nb_visits
+                
+FROM elevators t1)
+
+GROUP BY nb_breakdowns;
+
+
+/** Réponse 1 : Il semble qu'il y ait une corrélation négative entre le 
+                nombre de visites et le nombre de pannes **/
+
+                
+
+
+
+/* Question 2 */
+
+SELECT elevator_id, count(*) AS n_relapses FROM (
+
+SELECT elevator_id, julianday(start_date) - julianday(prev_breakdowns) AS n_days 
+FROM (
+
+SELECT *, (SELECT start_date FROM breakdowns t1
+           WHERE t1.start_date < breakdowns.start_date AND t1.elevator_id = breakdowns.elevator_id
+           ORDER BY start_date DESC, elevator_id DESC LIMIT 1 ) prev_breakdowns
+           
+FROM breakdowns
+ORDER BY elevator_id, start_date)
+WHERE n_days < 90)
+GROUP BY elevator_id
+ORDER BY n_relapses DESC
+
+
+/** Réponse 2 : Les ascenseurs qui ont connus le plus de rechute se produisant à moins
+                de 90 jours de la précédente panne sont les ascenseurs : 7, 18, 38 (3 rechutes)
+**/
+
+
+
+/* Question 3 */
+
+SELECT elevator_id, SUM(intervention_cost) AS total_intervention_cost
+FROM breakdowns
+WHERE organization = 'UPTIME'
+GROUP BY elevator_id
+ORDER BY total_intervention_cost DESC
+
+/** Réponse 3 : L'ascenseur le plus profitable a été l'ascenseur 42 **/
+
+
+
+
+
+
+
+
